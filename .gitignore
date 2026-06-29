@@ -1,0 +1,10 @@
+downloads/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+*.epub
+rclone.conf
+github token/
+sync_existing.py
+docs/

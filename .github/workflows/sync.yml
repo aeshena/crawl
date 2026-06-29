@@ -1,0 +1,79 @@
+name: Novel Auto Sync
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+  repository_dispatch: # Allows trigger from external API (cron-job.org)
+    types: [trigger-sync]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Setup Rclone
+        uses: AnimMouse/setup-rclone@v1
+
+      - name: Configure Rclone
+        env:
+          RCLONE_CONFIG_BODY: ${{ secrets.RCLONE_CONFIG_DATA }}
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONFIG_BODY" > ~/.config/rclone/rclone.conf
+
+      - name: Run Sync Script
+        env:
+          CHROME_FLAGS: "--no-sandbox --disable-dev-shm-usage"
+        run: |
+          sudo apt-get install -y xvfb
+          
+          # Fix nodriver sandbox issue on root/CI by injecting flags into google-chrome
+          mkdir -p /tmp/bin
+          echo '#!/bin/bash' > /tmp/bin/google-chrome
+          echo 'exec /usr/bin/google-chrome --no-sandbox --disable-dev-shm-usage "$@"' >> /tmp/bin/google-chrome
+          chmod +x /tmp/bin/google-chrome
+          export PATH="/tmp/bin:$PATH"
+          
+          # Reduce lncrawl concurrency to avoid freewebnovel rate limits (HTTP 429)
+          lncrawl config set crawler runner_concurrency 1
+          lncrawl config set crawler runner_cooldown 2
+          
+          echo "[*] Checking for new chapters..."
+          python check_updates.py
+          echo "[*] Running Novel Sync..."
+          xvfb-run python sync_novels.py
+
+      - name: Upload to Google Drive
+        run: |
+          rclone copy ./downloads/ mydrive:My_Epub_Novels --verbose
+
+      - name: Save Library Progress
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "actions@github.com"
+          git add library.txt target_list.txt
+          git commit -m "Sync: Processed 5 novels [skip ci]" || exit 0
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Send Discord Notification
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: ${{ job.status }}
+          title: "Novel Sync Status"
+          description: "Novel sync process has finished."
+          color: 0x00ff00
