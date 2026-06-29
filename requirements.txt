@@ -1,2 +1,4 @@
 lightnovel-crawler
 requests
+python-dotenv
+libsql-client
