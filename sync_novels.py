@@ -4,7 +4,7 @@ import sys
 import re
 
 # --- Configuration ---
-TARGET_FILE = "target_list.txt"   # URLs you paste manually
+TARGET_FILE = sys.argv[1] if len(sys.argv) > 1 else "target_list.txt"   # URLs you paste manually
 COMPLETED_TITLES_FILE = "completed.txt" # Your completed names
 LIBRARY_FILE = "library.txt"     # Successfully downloaded URLs
 OUTPUT_DIR = "downloads"

@@ -4,6 +4,7 @@ __pycache__/
 .env
 .env.local
 .DS_Store
+target_list_local.txt
 *.epub
 rclone.conf
 github token/
