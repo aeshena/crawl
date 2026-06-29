@@ -46,9 +46,8 @@ jobs:
           chmod +x /tmp/bin/google-chrome
           export PATH="/tmp/bin:$PATH"
           
-          # Reduce lncrawl concurrency to avoid freewebnovel rate limits (HTTP 429)
-          lncrawl config set crawler runner_concurrency 1
-          lncrawl config set crawler runner_cooldown 2
+          # Discovery and sync
+
           
           echo "[*] Checking for new chapters..."
           python check_updates.py
