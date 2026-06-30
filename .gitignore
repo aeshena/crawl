@@ -10,3 +10,4 @@ rclone.conf
 github token/
 sync_existing.py
 docs/
+run-local.txt
