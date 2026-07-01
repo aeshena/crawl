@@ -52,8 +52,6 @@ jobs:
           echo "[*] Configuring lncrawl..."
           python -m lncrawl config set crawler ignore_images true
 
-          echo "[*] Checking for new chapters..."
-          python check_updates.py
           echo "[*] Running Novel Sync..."
           xvfb-run python sync_novels.py
 
