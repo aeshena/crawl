@@ -220,14 +220,14 @@ def discover_from_empirenovel(limit=50):
 def discover_from_readnovelfull(limit=100):
     """Scrape novels from readnovelfull.com (fast, no Cloudflare)"""
     sources = [
-        f"https://readnovelfull.com/novel-list/completed-novel?page={i}" for i in range(1, 20)
+        f"https://readnovelfull.com/novel-list/completed-novel?page={i}" for i in range(1, 50)
     ]
     
     import libsql_client
     url_db = os.environ.get('TURSO_DB_URL')
     token = os.environ.get('TURSO_AUTH_TOKEN')
     
-    blacklist = set()
+    blacklist = get_blacklisted_slugs()
     if token:
         try:
             client = libsql_client.create_client_sync(url_db, auth_token=token)
@@ -235,11 +235,9 @@ def discover_from_readnovelfull(limit=100):
             for row in rs.rows:
                 blacklist.add(slugify(str(row[0]).strip()))
         except Exception as e:
-            print("DB error, falling back to local blacklist:", e)
-            blacklist = get_blacklisted_slugs()
+            print("DB error, falling back to local blacklist only:", e)
     else:
         print("Warning: TURSO_AUTH_TOKEN not set, using local completed.txt for blacklist.")
-        blacklist = get_blacklisted_slugs()
     new_targets = []
     seen_urls = set()
     
@@ -268,6 +266,7 @@ def discover_from_readnovelfull(limit=100):
                 href = a.get('href')
                 if not href: continue
                 if not href.startswith('/'): continue
+                if href.count('/') > 1: continue
                 if 'chapter' in href.lower(): continue
                 if not href.endswith('.html'): continue
                 
@@ -300,12 +299,16 @@ def main():
     existing_targets = []
     if os.path.exists(TARGET_FILE):
         with open(TARGET_FILE, "r", encoding="utf-8") as f:
-            existing_targets = [line.strip() for line in f if line.strip()]
+            existing_targets.extend([line.strip() for line in f if line.strip()])
+            
+    if TARGET_FILE != "target_list.txt" and os.path.exists("target_list.txt"):
+        with open("target_list.txt", "r", encoding="utf-8") as f:
+            existing_targets.extend([line.strip() for line in f if line.strip()])
 
     new_novels = []
 
     # ReadNovelFull (Fast, reliable, works with lncrawl)
-    rnf_novels = discover_from_readnovelfull(limit=100)
+    rnf_novels = discover_from_readnovelfull(limit=1000)
     new_novels.extend(rnf_novels)
 
     added_count = 0
