@@ -8,7 +8,7 @@ TARGET_FILE = sys.argv[1] if len(sys.argv) > 1 else "target_list.txt"   # URLs y
 COMPLETED_TITLES_FILE = "completed.txt" # Your completed names
 LIBRARY_FILE = "library.txt"     # Successfully downloaded URLs
 OUTPUT_DIR = "downloads"
-BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 5)) # Number of novels to process per run
+BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 10)) # Number of novels to process per run
 # ---------------------
 
 def slugify(text):
